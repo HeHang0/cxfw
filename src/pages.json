@@ -1,0 +1,55 @@
+{
+  "pages": [
+    {
+      "path": "pages/overview/index",
+      "style": {
+        "navigationBarTitleText": "骑行总览"
+      }
+    },
+    {
+      "path": "pages/report/index",
+      "style": {
+        "navigationBarTitleText": "骑行报告"
+      }
+    },
+    {
+      "path": "pages/archive/index",
+      "style": {
+        "navigationBarTitleText": "历史档案"
+      }
+    },
+    {
+      "path": "pages/vehicle/index",
+      "style": {
+        "navigationBarTitleText": "我的车辆"
+      }
+    },
+    {
+      "path": "pages/fuel/index",
+      "style": {
+        "navigationBarTitleText": "油耗与加油记录"
+      }
+    },
+    {
+      "path": "pages/ride-detail/index",
+      "style": {
+        "navigationBarTitleText": "骑行记录详情",
+        "navigationBarBackgroundColor": "#FFFFFF",
+        "backgroundColor": "#FFFFFF"
+      }
+    },
+    {
+      "path": "pages/login/index",
+      "style": {
+        "navigationBarTitleText": "登录"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "春风骑行数据",
+    "navigationBarBackgroundColor": "#FFF9F2",
+    "backgroundColor": "#FFF9F2",
+    "navigationStyle": "custom"
+  }
+}

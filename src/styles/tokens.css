@@ -1,0 +1,59 @@
+/**
+ * 设计令牌 — 来自 Pixso 设计文件（file_key: lSL1TgF7koyOV6I0X6uerw）的
+ * 「设计规范 · 组件与状态」Frame 与变量集 Theme/Light。
+ *
+ * 约定：
+ * - 颜色与圆角、间距直接对应设计变量，命名保持一一对应，方便回去核对。
+ * - 尺寸单位用 rpx：设计稿按 375pt 宽出图，uni-app 以 750rpx 为屏宽，
+ *   因此「设计 px × 2 = rpx」。注释里保留原始设计值。
+ * - 变量挂在 `page` 上：小程序中 page 是根节点，H5 中 uni-app 会把它转成页面容器，
+ *   所有组件都是其后代，可以正常继承。
+ */
+
+page {
+  /* 背景 */
+  --cf-bg-page: #fff9f2;
+  --cf-bg-card: #ffffff;
+  --cf-bg-soft: #fff7ec;
+
+  /* 品牌色 · 蓝 */
+  --cf-blue: #a9d8f5;
+  --cf-blue-soft: #e7f4fd;
+  --cf-blue-deep: #6fb6e0;
+
+  /* 品牌色 · 薄荷 */
+  --cf-mint: #bfe8d0;
+  --cf-mint-soft: #e9f7f0;
+  --cf-mint-deep: #6fbf96;
+
+  /* 品牌色 · 奶油 */
+  --cf-cream: #ffe7a8;
+  --cf-cream-soft: #fff6de;
+
+  /* 品牌色 · 薰衣草 */
+  --cf-lavender: #dcd5f5;
+  --cf-lavender-soft: #f1eefb;
+
+  /* 文字 */
+  --cf-text-1: #414653;
+  --cf-text-2: #8b95a5;
+  --cf-text-3: #b7c0cd;
+
+  /* 线与状态 */
+  --cf-line: #f0ede7;
+  --cf-success: #4e9e77;
+  --cf-danger: #e58c8c;
+  --cf-danger-soft: #fdeeee;
+  --cf-warn: #d9a34a;
+  --cf-shadow: rgba(169, 180, 196, 0.1);
+
+  /* 圆角（设计值 24 / 20 / 12 / 999） */
+  --cf-radius-lg: 48rpx;
+  --cf-radius-card: 40rpx;
+  --cf-radius-sm: 24rpx;
+  --cf-radius-pill: 999px;
+
+  /* 间距（设计值 页面边距 20 / 区块间距 16） */
+  --cf-space-page: 40rpx;
+  --cf-space-gap: 32rpx;
+}
