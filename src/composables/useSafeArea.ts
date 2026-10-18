@@ -43,6 +43,7 @@ export interface SafeArea {
 
 function readSafeArea(): SafeArea {
   const api = platform() as {
+    getWindowInfo?: () => SystemInfoLike
     getSystemInfoSync?: () => SystemInfoLike
     getMenuButtonBoundingClientRect?: () => MenuButtonRectLike | undefined
   }
@@ -52,7 +53,12 @@ function readSafeArea(): SafeArea {
   let navBarHeight = DEFAULT_NAV_BAR_HEIGHT
 
   try {
-    const info = api.getSystemInfoSync?.() ?? {}
+    // 微信已将 getSystemInfoSync 标记为废弃，优先使用 getWindowInfo。
+    // 仅老版本基础库缺少 getWindowInfo 时才回退，避免新环境反复触发废弃警告。
+    let info = api.getWindowInfo?.() ?? {}
+    if (info.statusBarHeight === undefined || info.windowWidth === undefined) {
+      info = { ...info, ...(api.getSystemInfoSync?.() ?? {}) }
+    }
     statusBarHeight = Number(info.statusBarHeight ?? 0)
 
     const rect = api.getMenuButtonBoundingClientRect?.()

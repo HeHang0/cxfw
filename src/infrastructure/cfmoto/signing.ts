@@ -82,7 +82,7 @@ export function buildSignedHeaders(input: BuildSignedHeadersInput): SignedHeader
     headers['X-Cfmoto-Cookie'] = input.cookie
     // #endif
     // #ifndef H5
-    headers['cookie'] = input.cookie
+    headers['Cookie'] = input.cookie;
     // #endif
   }
   return { headers, xParam, nonce, timestamp, sign }

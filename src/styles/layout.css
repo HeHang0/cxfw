@@ -79,3 +79,9 @@
   color: var(--cf-text-2);
   line-height: 1.6;
 }
+
+.amap-copyright,
+.amap-logo {
+  z-index: unset;
+  opacity: 0.5;
+}

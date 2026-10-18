@@ -9,7 +9,7 @@ withDefaults(
   defineProps<{
     label: string
     /** neutral 是设计稿里的浅灰胶囊（#F2EFE9），用于"未设置/未知"这类中性状态 */
-    tone?: 'mint' | 'blue' | 'cream' | 'neutral'
+    tone?: 'mint' | 'blue' | 'cream' | 'neutral' | 'danger'
   }>(),
   { tone: 'mint' },
 )
@@ -50,6 +50,10 @@ withDefaults(
   background-color: #f2efe9;
 }
 
+.chip--danger {
+  background-color: var(--cf-danger-soft);
+}
+
 .chip__dot {
   width: 12rpx;
   height: 12rpx;
@@ -73,6 +77,10 @@ withDefaults(
   background-color: var(--cf-text-3);
 }
 
+.chip--danger .chip__dot {
+  background-color: var(--cf-danger);
+}
+
 .chip__label {
   font-size: 22rpx;
   line-height: 1;
@@ -92,5 +100,9 @@ withDefaults(
 
 .chip--neutral .chip__label {
   color: var(--cf-text-2);
+}
+
+.chip--danger .chip__label {
+  color: var(--cf-danger);
 }
 </style>

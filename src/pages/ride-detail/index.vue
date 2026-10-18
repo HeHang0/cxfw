@@ -12,7 +12,34 @@ import { navigateBack } from '@/utils/navigation'
 const ride = useRideHistoryStore()
 const safeArea = useSafeArea()
 const MAP_ID = 'ride-track-map'
+let isH5Runtime = false
+// #ifdef H5
+ isH5Runtime = true
+// #endif
 let mapReady = false
+
+interface AmapLngLat {
+  getLng(): number
+  getLat(): number
+}
+
+interface AmapBounds {
+  getSouthWest(): AmapLngLat
+  getNorthEast(): AmapLngLat
+}
+
+interface AmapMap {
+  setBounds(bounds: AmapBounds, immediately?: boolean): void
+}
+
+interface AmapMapElement extends HTMLElement {
+  amap?: AmapMap
+}
+
+interface AmapNamespace {
+  LngLat: new (lng: number, lat: number) => AmapLngLat
+  Bounds: new (southWest: AmapLngLat, northEast: AmapLngLat) => AmapBounds
+}
 
 onLoad((options) => {
   const id = typeof options?.id === 'string' ? options.id : ''
@@ -88,6 +115,15 @@ const includePoints = computed(() => {
     { latitude: maxLat + latMargin, longitude: maxLng + lngMargin },
   ]
 })
+
+/**
+ * uni-app H5 的 include-points 会把坐标数组直接传给 AMap.Bounds，
+ * 高德会得到非法边界并把地图重置到全球视图。H5 由 fitAmapTrack 负责
+ * 设置边界，小程序继续使用原生 include-points。
+ */
+const mapIncludePoints = computed(() =>
+  isH5Runtime ? [] : includePoints.value,
+)
 
 const mapMarkers = computed(() => {
   if (mapPoints.value.length === 0) return []
@@ -185,8 +221,13 @@ function hslToHex(hue: number, saturation: number, lightness: number): string {
 }
 
 function fitTrack(): void {
-  if (!mapReady || mapPoints.value.length === 0) return
+  if (mapPoints.value.length === 0) return
   void nextTick(() => {
+    if (isH5Runtime) {
+      fitAmapTrack()
+      return
+    }
+    if (!mapReady) return
     try {
       uni.createMapContext(MAP_ID).includePoints({
         points: mapPoints.value,
@@ -196,6 +237,28 @@ function fitTrack(): void {
       // include-points 属性仍会作为兜底
     }
   })
+}
+
+function fitAmapTrack(attempt = 0): void {
+  const southWest = includePoints.value[0]
+  const northEast = includePoints.value[3]
+  if (!southWest || !northEast) return
+
+  const mapElement = document.querySelector(`#${MAP_ID} > div`) as AmapMapElement | null
+  const amap = (window as unknown as { AMap?: AmapNamespace }).AMap
+  const map = mapElement?.amap
+  if (!map || !amap) {
+    if (attempt < 20) window.setTimeout(() => fitAmapTrack(attempt + 1), 100)
+    return
+  }
+
+  map.setBounds(
+    new amap.Bounds(
+      new amap.LngLat(southWest.longitude, southWest.latitude),
+      new amap.LngLat(northEast.longitude, northEast.latitude),
+    ),
+    true,
+  )
 }
 
 onReady(() => {
@@ -229,12 +292,13 @@ function compactText(value: string): string {
 <template>
   <view class="detail">
     <map
+      v-if="mapPoints.length > 0"
       :id="MAP_ID"
       class="detail__map"
       :latitude="mapCenter.latitude"
       :longitude="mapCenter.longitude"
       :scale="12"
-      :include-points="includePoints"
+      :include-points="mapIncludePoints"
       :markers="mapMarkers"
       :polyline="polylines"
     />

@@ -5,6 +5,11 @@ import { md5 } from '@/infrastructure/cfmoto/crypto/md5'
 import { sha1 } from '@/infrastructure/cfmoto/crypto/sha1'
 import { TEST_REF, TEST_USER_ID } from './helpers/fixtures'
 
+function headerValue(headers: Record<string, string>, name: string): string | undefined {
+  const key = Object.keys(headers).find((item) => item.toLowerCase() === name.toLowerCase())
+  return key === undefined ? undefined : headers[key]
+}
+
 describe('请求签名', () => {
   it('Cfmoto-X-Param 的格式与 api.yaml 描述一致', () => {
     expect(buildXParam('gxNLnk9s', 'abc123', '1700000000000')).toBe(
@@ -39,12 +44,12 @@ describe('请求签名', () => {
     expect(result.headers['timestamp']).toBe('1700000000000')
     expect(result.headers['Cfmoto-X-Sign']).toBe(result.headers['signature'])
     expect(result.headers['Cfmoto-X-Sign']).toBe(result.sign)
-    expect(result.headers['cookie']).toBe(cookie)
+    expect(headerValue(result.headers, 'cookie')).toBe(cookie)
   })
 
   it('登录前的请求不带 cookie 头', () => {
     const config = resolveCfMotoConfig({ appSecret: 'SECRET' })
     const result = buildSignedHeaders({ config, payload: '', cookie: null })
-    expect(result.headers['cookie']).toBeUndefined()
+    expect(headerValue(result.headers, 'cookie')).toBeUndefined()
   })
 })

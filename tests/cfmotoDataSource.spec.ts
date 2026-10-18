@@ -88,6 +88,17 @@ function queryOf(request: HttpRequest): Record<string, unknown> {
   return result;
 }
 
+function headerOf(
+  headers: Record<string, string> | undefined,
+  name: string
+): string | undefined {
+  if (!headers) return undefined;
+  const key = Object.keys(headers).find(
+    item => item.toLowerCase() === name.toLowerCase()
+  );
+  return key === undefined ? undefined : headers[key];
+}
+
 function queryStringOf(request: HttpRequest): string {
   const index = request.url.indexOf('?');
   return index < 0 ? '' : request.url.slice(index + 1);
@@ -120,7 +131,7 @@ describe('CfMotoRideDataSource 标识符使用', () => {
       month: '2026-10'
     });
     // Cookie 里也必须带上 vehicle_id
-    expect(http.calls[0]?.request.headers?.['cookie']).toContain(
+    expect(headerOf(http.calls[0]?.request.headers, 'cookie')).toContain(
       `vehicle_id=${TEST_REF.deviceId}`
     );
   });
@@ -543,7 +554,7 @@ describe('CfMotoApiClient 统一错误处理', () => {
       'timestamp',
       'cookie'
     ]) {
-      expect(headers[key], `缺少请求头 ${key}`).toBeDefined();
+      expect(headerOf(headers, key), `缺少请求头 ${key}`).toBeDefined();
     }
     // 密钥不能出现在任何请求头里
     expect(JSON.stringify(headers)).not.toContain('SECRET');

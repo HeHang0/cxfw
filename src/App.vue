@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { onError, onLaunch, onUnhandledRejection } from '@dcloudio/uni-app'
+import { onError, onLaunch, onPageNotFound, onUnhandledRejection } from '@dcloudio/uni-app'
 import { useAuthStore } from '@/stores/auth'
 import { useVehicleStore } from '@/stores/vehicle'
 import { writeTrace } from '@/utils/trace'
 import { setUnauthorizedHandler } from '@/services/container'
-import { goToLogin, showToast } from '@/utils/navigation'
+import { goToLogin, goToTab, ROUTES, showToast } from '@/utils/navigation'
 
 /**
  * 应用入口。
@@ -47,6 +47,39 @@ onUnhandledRejection((result) => {
   const reason = (result as { reason?: unknown })?.reason
   writeTrace('app.unhandled:' + String((reason as { message?: string })?.message ?? reason))
 })
+
+// 未知路由统一回到总览；若总览也不可用，避免重复触发造成死循环。
+let redirectingFromNotFound = false
+onPageNotFound(() => {
+  if (redirectingFromNotFound) return
+  redirectingFromNotFound = true
+  goToTab(ROUTES.overview)
+  setTimeout(() => {
+    redirectingFromNotFound = false
+  }, 1000)
+})
+
+// H5 运行中手动修改 hash 不会触发 onPageNotFound，补一层同样的兜底。
+const knownRoutePaths = new Set(
+  Object.values(ROUTES).map((path) => path.replace(/^\//, '')),
+)
+
+function redirectUnknownHash(): void {
+  if (typeof window === 'undefined' || redirectingFromNotFound) return
+  const rawPath = window.location.hash.replace(/^#/, '').split('?')[0] ?? ''
+  const path = rawPath.replace(/^\//, '')
+  if (path === '' || knownRoutePaths.has(path)) return
+
+  redirectingFromNotFound = true
+  goToTab(ROUTES.overview)
+  window.setTimeout(() => {
+    redirectingFromNotFound = false
+  }, 1000)
+}
+
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+  window.addEventListener('hashchange', redirectUnknownHash)
+}
 </script>
 
 <style>

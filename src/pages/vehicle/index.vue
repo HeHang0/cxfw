@@ -48,6 +48,8 @@ const auth = useAuthStore();
 const vehicle = useVehicleStore();
 const fuel = useFuelStore();
 const safeArea = useSafeArea();
+/** H5 没有微信胶囊高度，按微信胶囊的常见高度兜底。 */
+const navActionHeight = safeArea.capsuleHeight > 0 ? safeArea.capsuleHeight : 32;
 const pickerOpen = ref(false);
 const servicesOpen = ref(false);
 const messageModalOpen = ref(false);
@@ -277,6 +279,14 @@ const statusRows = computed(() => {
   const simExpire = current_?.simExpire;
   const simKnown = simExpire !== null && simExpire !== undefined;
   const days = current_?.simFreeDays;
+  const daysKnown = days !== null && days !== undefined;
+  const daysTone = !daysKnown
+    ? ('mint' as const)
+    : days <= 7
+      ? ('danger' as const)
+      : days <= 30
+        ? ('cream' as const)
+        : ('mint' as const);
   return [
     {
       // simExpire / simExpireTime / simFreeDate 都来自车辆状态接口
@@ -291,11 +301,11 @@ const statusRows = computed(() => {
       tone: simExpire ? ('cream' as const) : ('mint' as const)
     },
     {
-      icon: 'wifi-primary' as const,
+      icon: 'calendar-primary' as const,
       label: 'SIM 剩余天数',
-      value: days === null || days === undefined ? UNKNOWN_TEXT : `${days} 天`,
-      chip: null,
-      tone: 'mint' as const
+      value: daysKnown ? `${days} 天` : UNKNOWN_TEXT,
+      chip: daysKnown ? `${days} 天` : null,
+      tone: daysTone
     },
     {
       icon: 'pin-primary' as const,
@@ -396,15 +406,14 @@ const functionSummary = computed(() => {
   return `已支持 ${supported} 项功能`;
 });
 
-const fencingText = computed(() => {
+const fencingLines = computed(() => {
   const fences = state.value?.electricFences ?? [];
-  if (fences.length === 0) return '无电子围栏数据';
+  if (fences.length === 0) return ['无电子围栏数据'];
   return fences
     .map(
       fence =>
         `${fence.name ?? '未命名'}（${fence.address ?? '无地址'}，半径 ${formatKm(fence.radiusKm, 1)}）`
-    )
-    .join('；');
+    );
 });
 
 function onInfoRow(row: {
@@ -487,8 +496,12 @@ function togglePicker(): void {
           marginRight: `${safeArea.capsuleGap}px`
         }">
         <text class="page-head__title">我的车辆</text>
-        <view class="icon-btn" @tap="onRefresh">
-          <CfIcon name="refresh-primary" :size="36" />
+        <view
+          class="nav-pill"
+          :style="{ height: `${navActionHeight}px` }"
+          @tap="onRefresh">
+          <CfIcon name="refresh-primary" :size="28" />
+          <text class="nav-pill__text">刷新</text>
         </view>
       </view>
 
@@ -673,6 +686,13 @@ function togglePicker(): void {
           title="车辆状态"
           subtitle="T-Box 与车联网服务"
           compact-radius>
+          <template #right>
+            <view class="status-refresh" @tap="vehicle.loadState">
+              <text class="status-refresh__text">{{
+                vehicle.stateLoading ? '读取中…' : '刷新车辆状态'
+              }}</text>
+            </view>
+          </template>
           <view class="rows">
             <view
               v-for="(row, index) in statusRows"
@@ -692,13 +712,12 @@ function togglePicker(): void {
               </view>
             </view>
           </view>
-          <text class="note">电子围栏：{{ fencingText }}</text>
-          <view class="row-actions">
-            <view class="button" @tap="vehicle.loadState">
-              <text class="button__text">{{
-                vehicle.stateLoading ? '读取中…' : '刷新车辆状态'
-              }}</text>
-            </view>
+          <view class="fence-lines">
+            <text
+              v-for="(line, index) in fencingLines"
+              :key="`${line}-${index}`"
+              class="note fence-lines__item"
+            >{{ line }}</text>
           </view>
         </SectionCard>
 
@@ -896,14 +915,25 @@ function togglePicker(): void {
   color: var(--cf-text-1);
 }
 
-.icon-btn {
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: 28rpx;
-  background-color: var(--cf-bg-card);
+.nav-pill {
+  box-sizing: border-box;
+  padding: 0 20rpx;
+  border-radius: 999px;
+  border: 1rpx solid rgba(65, 70, 83, 0.06);
+  background-color: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 4rpx 12rpx rgba(65, 70, 83, 0.08);
   display: flex;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
+  gap: 8rpx;
+  flex-shrink: 0;
+}
+
+.nav-pill__text {
+  font-size: 22rpx;
+  font-weight: 500;
+  color: var(--cf-text-1);
 }
 
 /* 车辆卡 */
@@ -1159,20 +1189,30 @@ function togglePicker(): void {
   color: var(--cf-text-3);
 }
 
-.row-actions {
+.fence-lines {
   display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 4rpx;
 }
 
-.button {
-  padding: 16rpx 32rpx;
+.fence-lines__item {
+  display: block;
+}
+
+.status-refresh {
+  align-self: flex-start;
+  height: 48rpx;
+  padding: 0 20rpx;
   border-radius: var(--cf-radius-pill);
   background-color: var(--cf-bg-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-.button__text {
-  font-size: 24rpx;
+.status-refresh__text {
+  font-size: 22rpx;
   font-weight: 500;
   color: var(--cf-text-1);
 }

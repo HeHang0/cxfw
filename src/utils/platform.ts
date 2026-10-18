@@ -16,6 +16,7 @@ export interface PlatformApi {
     success?: (result: { confirm?: boolean }) => void
     fail?: () => void
   }): void
+  getWindowInfo?(): { statusBarHeight?: number; windowWidth?: number }
   getSystemInfoSync?(): { statusBarHeight?: number; windowWidth?: number }
   getMenuButtonBoundingClientRect?(): { right?: number; top?: number; bottom?: number } | undefined
 }

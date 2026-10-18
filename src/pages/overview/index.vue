@@ -129,6 +129,9 @@ const vehicleMapMarkers = computed(() =>
           id: 1,
           latitude: vehicleMapLatitude.value,
           longitude: vehicleMapLongitude.value,
+// #ifdef H5
+          iconPath: '/static/map/vehicle-pin.png',
+// #endif
           width: 28,
           height: 36,
           callout: {
@@ -239,7 +242,7 @@ function onBarSelect(index: number): void {
   <view class="cf-page cf-overview" @tap="selectedBarIndex = -1">
     <view class="cf-overview__content">
       <view
-        v-if="loading && !bootstrapped"
+        v-if="loading && !bootstrapped && !vehicle.activeRef"
         :style="{ marginTop: `${safeArea.statusBarHeight}px` }"
       >
         <StatePanel status="loading" />
