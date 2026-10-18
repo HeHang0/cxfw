@@ -184,10 +184,14 @@ describe('天气文案', () => {
         }
       },
     }
-    const source = new TencentWeatherDataSource({ http, apiKey: 'TEST_KEY' })
+    const source = new TencentWeatherDataSource({
+      http,
+      apiKey: 'TEST_KEY',
+      baseUrl: 'https://weather.example.com/',
+    })
     const result = await source.getCurrentWeather(31.037666, 120.853333)
 
-    expect(calls[0]?.url).toBe('https://apis.map.qq.com/ws/weather/v1/')
+    expect(calls[0]?.url).toBe('https://weather.example.com/ws/weather/v1/')
     expect(calls[0]?.query).toEqual({
       key: 'TEST_KEY',
       location: '31.037666,120.853333',

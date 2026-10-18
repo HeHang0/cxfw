@@ -9,6 +9,7 @@ const WEATHER_PATH = '/ws/weather/v1/';
 export interface TencentWeatherDataSourceOptions {
   readonly http: HttpClient;
   readonly apiKey: string;
+  readonly baseUrl?: string;
 }
 
 /** `api.yaml` 中 `/ws/weather/v1/` 的真实响应适配。 */
@@ -16,10 +17,12 @@ export class TencentWeatherDataSource implements WeatherDataSource {
   readonly sourceId = 'tencent-weather';
   private readonly http: HttpClient;
   private readonly apiKey: string;
+  private readonly baseUrl: string;
 
   constructor(options: TencentWeatherDataSourceOptions) {
     this.http = options.http;
     this.apiKey = options.apiKey.trim();
+    this.baseUrl = (options.baseUrl?.trim() || TENCENT_MAP_BASE_URL).replace(/\/+$/, '');
   }
 
   async getCurrentWeather(
@@ -34,7 +37,7 @@ export class TencentWeatherDataSource implements WeatherDataSource {
     }
 
     const response = await this.http.request({
-      url: `${TENCENT_MAP_BASE_URL}${WEATHER_PATH}`,
+      url: `${this.baseUrl}${WEATHER_PATH}`,
       method: 'GET',
       query: {
         key: this.apiKey,

@@ -173,6 +173,7 @@ export function createContainer(options: CreateContainerOptions = {}): AppContai
     dataSource: new TencentWeatherDataSource({
       http: createUniHttpClient(logger.child('weather')),
       apiKey: readEnv()['VITE_TENCENT_MAP_KEY'] ?? '',
+      baseUrl: readEnv()['VITE_TENCENT_WEATHER_BASE_URL'] ?? '',
     }),
     repository: new UniWeatherRepository({ store: repositoryStore }),
     clock,

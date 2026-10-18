@@ -40,11 +40,13 @@ jobs:
 
       - name: Create .env from repository variables
         env:
+          VITE_TENCENT_WEATHER_BASE_URL: ${{ vars.VITE_TENCENT_WEATHER_BASE_URL }}
           VITE_CFMOTO_APP_SECRET: ${{ vars.VITE_CFMOTO_APP_SECRET }}
           VITE_CFMOTO_BASE_URL: ${{ vars.VITE_CFMOTO_BASE_URL }}
           VITE_TENCENT_MAP_KEY: ${{ vars.VITE_TENCENT_MAP_KEY }}
         run: |
           cat > .env <<EOF
+          VITE_TENCENT_WEATHER_BASE_URL=${VITE_TENCENT_WEATHER_BASE_URL}
           VITE_CFMOTO_APP_SECRET=${VITE_CFMOTO_APP_SECRET}
           VITE_CFMOTO_BASE_URL=${VITE_CFMOTO_BASE_URL}
           VITE_TENCENT_MAP_KEY=${VITE_TENCENT_MAP_KEY}

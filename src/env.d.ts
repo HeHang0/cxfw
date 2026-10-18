@@ -15,6 +15,8 @@ interface ImportMetaEnv {
   readonly VITE_CFMOTO_TIMEOUT_MS?: string
   /** 腾讯位置服务 API Key，仅从本地环境配置读取。 */
   readonly VITE_TENCENT_MAP_KEY?: string
+  /** 腾讯天气接口域名，可替换为自建代理地址。 */
+  readonly VITE_TENCENT_WEATHER_BASE_URL?: string
   /** 仅调试用：直接注入登录 ticket，跳过短信验证码登录。 */
   readonly VITE_DEV_TICKET?: string
   readonly VITE_DEV_USER_ID?: string
