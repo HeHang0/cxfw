@@ -12,6 +12,10 @@ export const storageKeys = {
   sync: (vehicleId: string): string => `${PREFIX}:sync:${vehicleId}`,
   refuels: (vehicleId: string): string => `${PREFIX}:refuels:${vehicleId}`,
   fuelSettings: (vehicleId: string): string => `${PREFIX}:fuel-settings:${vehicleId}`,
+  /** 天气只保留当前这一份，不再按坐标生成 key。 */
+  weather: `${PREFIX}:weather`,
+  /** 旧版本按坐标缓存的天气键，启动时清理。 */
+  weatherLegacyPrefix: `${PREFIX}:weather:`,
 } as const
 
 export function parseMonthStorageKey(key: string): { vehicleId: string; month: string } | null {

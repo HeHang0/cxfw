@@ -20,8 +20,18 @@ const props = withDefaults(
     compactRadius?: boolean
     /** 标题行整体是否可点击。 */
     clickableHeader?: boolean
+    /** 折叠态隐藏 body，避免空内容仍占用卡片间距。 */
+    hideBody?: boolean
   }>(),
-  { title: '', subtitle: '', note: '', icon: null, compactRadius: false, clickableHeader: false },
+  {
+    title: '',
+    subtitle: '',
+    note: '',
+    icon: null,
+    compactRadius: false,
+    clickableHeader: false,
+    hideBody: false,
+  },
 )
 
 const emit = defineEmits<{ headerTap: [] }>()
@@ -48,7 +58,7 @@ function onHeaderTap(): void {
       </view>
       <slot name="right" />
     </view>
-    <view class="section-card__body">
+    <view v-if="!hideBody" class="section-card__body">
       <slot />
     </view>
     <text v-if="note" class="section-card__note">{{ note }}</text>

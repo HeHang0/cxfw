@@ -13,6 +13,8 @@ interface ImportMetaEnv {
   readonly VITE_CFMOTO_APP_ID?: string
   readonly VITE_CFMOTO_APP_VERSION?: string
   readonly VITE_CFMOTO_TIMEOUT_MS?: string
+  /** 腾讯位置服务 API Key，仅从本地环境配置读取。 */
+  readonly VITE_TENCENT_MAP_KEY?: string
   /** 仅调试用：直接注入登录 ticket，跳过短信验证码登录。 */
   readonly VITE_DEV_TICKET?: string
   readonly VITE_DEV_USER_ID?: string

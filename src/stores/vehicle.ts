@@ -28,6 +28,7 @@ export const useVehicleStore = defineLiteStore(() => {
   const error = ref<AppError | null>(null)
   const issues = ref<DataIssue[]>([])
   const loadedOnce = ref(false)
+  let telemetryTask: Promise<void> | null = null
 
   const activeVehicle = computed<Vehicle | null>(() => {
     if (vehicles.value.length === 0) return null
@@ -111,8 +112,15 @@ export const useVehicleStore = defineLiteStore(() => {
     }
   }
 
-  async function loadTelemetry(): Promise<void> {
-    if (telemetryLoading.value) return
+  function loadTelemetry(): Promise<void> {
+    if (telemetryTask) return telemetryTask
+    telemetryTask = runTelemetryLoad().finally(() => {
+      telemetryTask = null
+    })
+    return telemetryTask
+  }
+
+  async function runTelemetryLoad(): Promise<void> {
     const ref_ = activeRef.value
     if (!ref_) {
       error.value = toAppError(new Error('车辆标识不完整，无法查询实时车况'))

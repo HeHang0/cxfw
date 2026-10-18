@@ -471,10 +471,6 @@ async function onSelect(vehicleId: string): Promise<void> {
 }
 
 function togglePicker(): void {
-  if (vehicle.vehicles.length <= 1) {
-    showToast(`当前账号只绑定了 ${vehicle.vehicles.length} 台车`);
-    return;
-  }
   pickerOpen.value = !pickerOpen.value;
 }
 </script>
@@ -737,12 +733,10 @@ function togglePicker(): void {
           :subtitle="functionSummary"
           compact-radius
           clickable-header
+          :hide-body="!servicesOpen"
           @header-tap="toggleServices">
           <template #right>
             <view class="link">
-              <text class="link__text">{{
-                servicesOpen ? '收起' : '展开'
-              }}</text>
               <view
                 class="link__arrow"
                 :class="{ 'link__arrow--open': servicesOpen }">
@@ -772,16 +766,23 @@ function togglePicker(): void {
         </SectionCard>
 
         <!-- 切换车辆 -->
-        <view class="switch-row" @tap="togglePicker">
-          <CfIcon name="layers-primary" :size="36" />
-          <view class="switch-row__text">
-            <text class="switch-row__title">切换车辆</text>
-            <text class="switch-row__sub"
-              >已绑定 {{ vehicle.vehicles.length }} 台</text
-            >
-          </view>
-        </view>
-        <SectionCard v-if="pickerOpen" title="选择车辆" compact-radius>
+        <SectionCard
+          v-if="vehicle.vehicles.length > 1"
+          title="切换车辆"
+          :subtitle="`已绑定 ${vehicle.vehicles.length} 台`"
+          compact-radius
+          clickable-header
+          :hide-body="!pickerOpen"
+          @header-tap="togglePicker">
+          <template #right>
+            <view class="link">
+              <view
+                class="link__arrow"
+                :class="{ 'link__arrow--open': pickerOpen }">
+                <CfIcon name="chevron-right-secondary" :size="24" />
+              </view>
+            </view>
+          </template>
           <VehiclePicker
             :vehicles="vehicle.vehicles"
             :active-vehicle-id="current.vehicleId ?? null"
@@ -1198,37 +1199,6 @@ function togglePicker(): void {
 .pill__text--cream {
   color: #b58b3a;
   font-weight: 500;
-}
-
-/* 切换车辆行 */
-.switch-row {
-  height: 100rpx;
-  border-radius: var(--cf-radius-sm);
-  border: 2rpx solid var(--cf-line);
-  background-color: var(--cf-bg-card);
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 16rpx;
-  padding: 0 28rpx;
-  box-sizing: border-box;
-}
-
-.switch-row__text {
-  display: flex;
-  flex-direction: column;
-  gap: 4rpx;
-}
-
-.switch-row__title {
-  font-size: 28rpx;
-  font-weight: 600;
-  color: var(--cf-text-1);
-}
-
-.switch-row__sub {
-  font-size: 24rpx;
-  color: var(--cf-text-2);
 }
 
 .modal {

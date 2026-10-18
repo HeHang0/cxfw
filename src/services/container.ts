@@ -4,6 +4,7 @@ import { FuelService } from '@/core/application/FuelService'
 import { RideHistoryService } from '@/core/application/RideHistoryService'
 import { ReportService } from '@/core/application/ReportService'
 import { VehicleService } from '@/core/application/VehicleService'
+import { WeatherService } from '@/core/application/WeatherService'
 import { AppError } from '@/core/application/errors'
 import { systemClock, type Clock } from '@/core/contracts/Clock'
 import type { KeyValueStore } from '@/core/contracts/KeyValueStore'
@@ -29,6 +30,8 @@ import { TicketRoutedKeyValueStore } from '@/infrastructure/storage/TicketRouted
 import { MemoryKeyValueStore } from '@/infrastructure/storage/MemoryKeyValueStore'
 import { EastmoneyFuelPriceDataSource } from '@/infrastructure/oil/EastmoneyFuelPriceDataSource'
 import { isPreviewTicket } from '@/core/domain/preview'
+import { TencentWeatherDataSource } from '@/infrastructure/tencent/TencentWeatherDataSource'
+import { UniWeatherRepository } from '@/infrastructure/storage/UniWeatherRepository'
 
 /**
  * 依赖装配（唯一的组装点）。
@@ -55,6 +58,7 @@ export interface AppContainer {
   readonly historySyncService: HistorySyncService
   readonly fuelService: FuelService
   readonly rideHistoryService: RideHistoryService
+  readonly weatherService: WeatherService
 }
 
 /** UI 层注册的会话失效处理（清会话 + 跳登录页）。 */
@@ -165,6 +169,15 @@ export function createContainer(options: CreateContainerOptions = {}): AppContai
     clock,
     logger: logger.child('report'),
   })
+  const weatherService = new WeatherService({
+    dataSource: new TencentWeatherDataSource({
+      http: createUniHttpClient(logger.child('weather')),
+      apiKey: readEnv()['VITE_TENCENT_MAP_KEY'] ?? '',
+    }),
+    repository: new UniWeatherRepository({ store: repositoryStore }),
+    clock,
+    logger: logger.child('weather'),
+  })
 
   return {
     mode,
@@ -197,6 +210,7 @@ export function createContainer(options: CreateContainerOptions = {}): AppContai
       clock,
       logger: logger.child('sync'),
     }),
+    weatherService,
   }
 }
 

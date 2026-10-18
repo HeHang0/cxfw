@@ -43,7 +43,9 @@ const sendButtonText = computed(() =>
     ? auth.sendingCode
       ? '发送中…'
       : '获取验证码'
-    : `${auth.countdown}s`
+    : auth.countdown
+      ? `${auth.countdown}s`
+      : '发送中…'
 );
 const errorText = computed(() => auth.errorMessage ?? localError.value);
 

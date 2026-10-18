@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import CfBarChart from '@/components/CfBarChart.vue'
 import CfBikeScene from '@/components/CfBikeScene.vue'
@@ -12,6 +12,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useReportStore } from '@/stores/report'
 import { useRideHistoryStore } from '@/stores/rideHistory'
 import { useVehicleStore } from '@/stores/vehicle'
+import { useWeatherStore } from '@/stores/weather'
 import { useSafeArea } from '@/composables/useSafeArea'
 import { writeTrace } from '@/utils/trace'
 import { getContainer } from '@/services/container'
@@ -45,6 +46,7 @@ const auth = useAuthStore()
 const vehicle = useVehicleStore()
 const report = useReportStore()
 const rideHistory = useRideHistoryStore()
+const weather = useWeatherStore()
 const safeArea = useSafeArea()
 const bootstrapped = ref(false)
 const selectedBarIndex = ref(-1)
@@ -72,6 +74,22 @@ onShow(async () => {
   }
   bootstrapped.value = true
 })
+
+watch(
+  () =>
+    [
+      vehicle.telemetry?.location?.latitude,
+      vehicle.telemetry?.location?.longitude,
+    ] as const,
+  ([latitude, longitude]) => {
+    if (latitude !== null && latitude !== undefined && longitude !== null && longitude !== undefined) {
+      void weather.loadFromLocation(latitude, longitude)
+      return
+    }
+    if (!vehicle.telemetryLoading) weather.useFallback()
+  },
+  { immediate: true },
+)
 
 const stats = computed(() => report.monthStats)
 const lifetime = computed(() => report.lifetimeStats)
@@ -251,7 +269,7 @@ function onBarSelect(index: number): void {
         >
           <view class="greet__text">
             <text class="greet__title">{{ greeting }}</text>
-            <text class="greet__subtitle">今天也是适合骑行的好天气</text>
+            <text class="greet__subtitle">{{ weather.copy }}</text>
           </view>
         </view>
 

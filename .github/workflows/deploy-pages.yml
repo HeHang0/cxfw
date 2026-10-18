@@ -21,16 +21,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Configure Pages
         id: pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
 
       - name: Install dependencies
         run: npm install --no-audit --no-fund
@@ -38,19 +38,28 @@ jobs:
       - name: Type check
         run: npm run type-check
 
+      - name: Create .env from repository variables
+        env:
+          VITE_CFMOTO_APP_SECRET: ${{ vars.VITE_CFMOTO_APP_SECRET }}
+          VITE_CFMOTO_BASE_URL: ${{ vars.VITE_CFMOTO_BASE_URL }}
+          VITE_TENCENT_MAP_KEY: ${{ vars.VITE_TENCENT_MAP_KEY }}
+        run: |
+          cat > .env <<EOF
+          VITE_CFMOTO_APP_SECRET=${VITE_CFMOTO_APP_SECRET}
+          VITE_CFMOTO_BASE_URL=${VITE_CFMOTO_BASE_URL}
+          VITE_TENCENT_MAP_KEY=${VITE_TENCENT_MAP_KEY}
+          EOF
+
       - name: Build H5
         run: npm run build:h5
         env:
           VITE_PUBLIC_BASE: ${{ steps.pages.outputs.base_path }}
 
-      - name: Inject preview ticket
-        run: node scripts/inject-preview-ticket.mjs dist/build/h5/index.html
-
       - name: Disable Jekyll
         run: touch dist/build/h5/.nojekyll
 
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: dist/build/h5
 
@@ -63,4 +72,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

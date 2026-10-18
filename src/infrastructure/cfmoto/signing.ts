@@ -77,7 +77,13 @@ export function buildSignedHeaders(input: BuildSignedHeadersInput): SignedHeader
     timestamp,
   }
   if (input.cookie !== null && input.cookie !== '') {
+    // #ifdef H5
+    // 浏览器禁止手动设置 Cookie，由 Nginx 还原成上游 Cookie。
+    headers['X-Cfmoto-Cookie'] = input.cookie
+    // #endif
+    // #ifndef H5
     headers['cookie'] = input.cookie
+    // #endif
   }
   return { headers, xParam, nonce, timestamp, sign }
 }
