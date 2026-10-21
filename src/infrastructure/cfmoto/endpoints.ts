@@ -21,6 +21,8 @@ export const CFMOTO_PATHS = {
   vehicleOption: '/cfmotoservervehicle/app/vehicle/option',
   /** 车辆状态总览。GET ?vin= */
   vehicleStateOverview: '/cfmotoservervehicle/app/vehicle/state/overview/v2',
+  /** 所有车辆的摔车提醒开关。GET */
+  vehicleCrashRescueSettings: '/cfmotoservervehicle/app/user/vehicle/breakdown/rescue/setting',
   /** 车辆明细（拿 vehicleTypeId）。GET ?deviceName=<equipmentNum> */
   vehicleDetail: '/cfmotoservervehicle/app/vehicle/detail',
   /** 实时车况：油量/信号/电压/位置/最近行程。GET ?deviceId=<T-Box>&type=<vehicleTypeId> */

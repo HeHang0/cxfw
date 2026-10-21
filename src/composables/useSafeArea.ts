@@ -29,6 +29,8 @@ const CAPSULE_GAP_PX = 8
 const PAGE_PADDING_RPX = 40
 /** 没有胶囊时（H5/App）的自定义导航栏高度。 */
 const DEFAULT_NAV_BAR_HEIGHT = 44
+/** H5 没有系统状态栏时的顶部安全间距。 */
+const DEFAULT_STATUS_BAR_HEIGHT = 24
 
 export interface SafeArea {
   /** 状态栏高度（px），用于页面顶部占位。 */
@@ -60,6 +62,9 @@ function readSafeArea(): SafeArea {
       info = { ...info, ...(api.getSystemInfoSync?.() ?? {}) }
     }
     statusBarHeight = Number(info.statusBarHeight ?? 0)
+    if (!Number.isFinite(statusBarHeight) || statusBarHeight <= 0) {
+      statusBarHeight = DEFAULT_STATUS_BAR_HEIGHT
+    }
 
     const rect = api.getMenuButtonBoundingClientRect?.()
     const windowWidth = Number(info.windowWidth ?? 0)

@@ -274,6 +274,40 @@ describe('CfMotoRideDataSource 标识符使用', () => {
     expect(state.settings?.raw['mileageUnit']).toBe('1');
   });
 
+  it('把当前车辆的摔车提醒开关合并到消息提醒', async () => {
+    const { client, http } = createClient(request => {
+      if (request.url.includes('/breakdown/rescue/setting')) {
+        return okResponse([
+          {
+            vehicleCrashRescueServiceSwitch: false,
+            vehicleName: 'CF250-12',
+            vehiclePicUrl: 'https://example.com/bike.png',
+            vin: TEST_REF.vin
+          }
+        ]);
+      }
+      return okResponse({
+        vin: TEST_REF.vin,
+        vehicleMessageSet: []
+      });
+    });
+    const source = new CfMotoRideDataSource({ client });
+    const state = await source.getVehicleState(TEST_REF);
+
+    expect(state.messageSettings).toContainEqual({
+      type: 'crashRescue',
+      enabled: false,
+      threshold: null
+    });
+    expect(
+      http.calls.some(call =>
+        call.request.url.includes(
+          '/cfmotoservervehicle/app/user/vehicle/breakdown/rescue/setting'
+        )
+      )
+    ).toBe(true);
+  });
+
   it('车辆列表会合并 list 与 option 的结果', async () => {
     const { client, http } = createClient(request => {
       if (request.url.includes('/app/vehicle/list')) {

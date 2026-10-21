@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import CfBarChart from '@/components/CfBarChart.vue'
 import CfBikeScene from '@/components/CfBikeScene.vue'
 import CfIcon from '@/components/CfIcon.vue'
 import CfStatTriple from '@/components/CfStatTriple.vue'
 import CfTabBar from '@/components/CfTabBar.vue'
+import CfTopBlur from '@/components/CfTopBlur.vue'
 import SectionCard from '@/components/SectionCard.vue'
 import StatePanel from '@/components/StatePanel.vue'
 import { useAuthStore } from '@/stores/auth'
@@ -26,7 +26,6 @@ import {
   formatKm,
   formatMonthDay,
   formatMonthLabel,
-  formatMonthShort,
   formatNumber,
   formatSpeed,
   UNKNOWN_TEXT,
@@ -37,7 +36,7 @@ import { goToLogin, goToTab, navigateTo, NAV_TABS, ROUTES } from '@/utils/naviga
  * 骑行总览（设计稿 Frame「01 总览」，节点 2:32）。
  *
  * 版式与设计稿一一对应：
- * 问候行（通知 + 头像）→ 车辆卡（含插画）→ 本月累计里程卡 → 里程趋势卡
+ * 问候行（通知 + 头像）→ 车辆卡（含插画）→ 本月累计里程卡
  * → 最近骑行卡 → 安全骑行横幅 → 底部导航。
  * 所有尺寸按设计稿 px × 2 换算成 rpx，颜色/圆角/间距取自设计变量。
  */
@@ -49,7 +48,6 @@ const rideHistory = useRideHistoryStore()
 const weather = useWeatherStore()
 const safeArea = useSafeArea()
 const bootstrapped = ref(false)
-const selectedBarIndex = ref(-1)
 
 onShow(async () => {
   writeTrace('overview.onShow')
@@ -179,16 +177,6 @@ const averageSpeedKph = computed(() => {
   return Math.round((distance / (duration / 3600)) * 10) / 10
 })
 
-const trendPoints = computed(() =>
-  report.recentMonths.map((point) => ({
-    label: formatMonthShort(point.month),
-    value: point.hasData ? point.distanceKm : null,
-    tooltip: point.hasData && point.distanceKm !== null ? formatKm(point.distanceKm, 1) : '—',
-  })),
-)
-
-const trendYear = computed(() => `${currentMonthKey.value.slice(0, 4)} 年`)
-
 const latestRideDate = computed<DateKey | null>(() => {
   const points = (stats.value?.dailyTrend ?? []).filter(
     (point) => point.distanceKm !== null && point.distanceKm > 0,
@@ -233,13 +221,27 @@ async function onRefresh(): Promise<void> {
   await loadRecentTrips()
 }
 
-function onBarSelect(index: number): void {
-  selectedBarIndex.value = index
+function goToAllRecords(): void {
+  const month = latestRideDate.value?.slice(0, 7) ?? currentMonthKey.value
+  goToTab(`${ROUTES.report}?focus=records&month=${month}`)
 }
+
+function goToCurrentMonthReport(): void {
+  goToTab(`${ROUTES.report}?month=${currentMonthKey.value}`)
+}
+
+function goToReportDay(date: DateKey | null | undefined): void {
+  if (!date) return
+  goToTab(
+    `${ROUTES.report}?focus=day&month=${date.slice(0, 7)}&date=${encodeURIComponent(date)}`,
+  )
+}
+
 </script>
 
 <template>
-  <view class="cf-page cf-overview" @tap="selectedBarIndex = -1">
+  <view class="cf-page cf-overview">
+    <CfTopBlur />
     <view class="cf-overview__content">
       <view
         v-if="loading && !bootstrapped && !vehicle.activeRef"
@@ -299,7 +301,9 @@ function onBarSelect(index: number): void {
 
         <!-- 本月累计里程 -->
         <SectionCard>
-          <view class="metric__header">
+          <view
+            class="metric__header metric__row--tappable"
+            @tap="goToCurrentMonthReport">
             <view class="metric__label">
               <CfIcon name="route-secondary" :size="30" />
               <text class="metric__label-text">本月累计里程</text>
@@ -308,7 +312,9 @@ function onBarSelect(index: number): void {
               <text class="pill__text">{{ monthPill }}</text>
             </view>
           </view>
-          <view class="metric__value">
+          <view
+            class="metric__value metric__row--tappable"
+            @tap="goToCurrentMonthReport">
             <text class="metric__number">{{ formatNumber(stats?.totalDistanceKm ?? null, 1) }}</text>
             <text class="metric__unit">km</text>
           </view>
@@ -334,7 +340,10 @@ function onBarSelect(index: number): void {
             </view>
             <text class="duo__hint">总里程 ÷ 总时长</text>
           </view>
-          <view class="duo__card duo__card--mint">
+          <view
+            class="duo__card duo__card--mint"
+            :class="{ 'duo__card--tappable': !!stats?.topSpeed }"
+            @tap="goToReportDay(stats?.topSpeed?.date)">
             <view class="duo__head">
               <CfIcon name="zap-deep" :size="28" />
               <text class="duo__label">最高速度</text>
@@ -347,7 +356,10 @@ function onBarSelect(index: number): void {
               {{ stats?.topSpeed ? `${formatMonthDay(stats.topSpeed.date)} 记录` : '暂无记录' }}
             </text>
           </view>
-          <view class="duo__card duo__card--cream">
+          <view
+            class="duo__card duo__card--cream"
+            :class="{ 'duo__card--tappable': !!stats?.longestRideDay }"
+            @tap="goToReportDay(stats?.longestRideDay?.date)">
             <view class="duo__head">
               <CfIcon name="route-secondary" :size="28" />
               <text class="duo__label">单日最远</text>
@@ -365,7 +377,7 @@ function onBarSelect(index: number): void {
         <!-- 最近骑行 -->
         <SectionCard title="最近骑行" :subtitle="recentDateLabel" compact-radius>
           <template #right>
-            <view class="link" @tap="goToTab(ROUTES.report)">
+            <view class="link" @tap="goToAllRecords">
               <text class="link__text">全部记录</text>
               <CfIcon name="chevron-deep" :size="24" />
             </view>
@@ -407,16 +419,6 @@ function onBarSelect(index: number): void {
             </view>
             </view>
           </view>
-        </SectionCard>
-
-        <!-- 里程趋势 -->
-        <SectionCard title="里程趋势" subtitle="近 6 个月 · 单位 km" compact-radius>
-          <template #right>
-            <view class="pill pill--cream">
-              <text class="pill__text pill__text--cream">{{ trendYear }}</text>
-            </view>
-          </template>
-          <CfBarChart :points="trendPoints" :selected-index="selectedBarIndex" @select="onBarSelect" />
         </SectionCard>
 
         <!-- 安全骑行横幅 -->
@@ -588,6 +590,10 @@ function onBarSelect(index: number): void {
   gap: 16rpx;
 }
 
+.metric__row--tappable:active {
+  opacity: 0.7;
+}
+
 .metric__number {
   font-size: 72rpx;
   font-weight: 700;
@@ -635,6 +641,10 @@ function onBarSelect(index: number): void {
   flex-direction: column;
   gap: 16rpx;
   box-shadow: 0 12rpx 32rpx var(--cf-shadow);
+}
+
+.duo__card--tappable:active {
+  opacity: 0.78;
 }
 
 .duo__card--blue {
@@ -704,18 +714,9 @@ function onBarSelect(index: number): void {
   background-color: var(--cf-blue-soft);
 }
 
-.pill--cream {
-  background-color: var(--cf-cream-soft);
-}
-
 .pill__text {
   font-size: 22rpx;
   color: var(--cf-text-2);
-}
-
-.pill__text--cream {
-  color: #b58b3a;
-  font-weight: 500;
 }
 
 /* 最近骑行 */

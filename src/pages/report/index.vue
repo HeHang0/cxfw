@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { computed, nextTick, ref, watch } from 'vue'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import CfBarChart from '@/components/CfBarChart.vue'
 import CfIcon from '@/components/CfIcon.vue'
 import RideDaySheet from '@/components/RideDaySheet.vue'
 import CfStatTriple from '@/components/CfStatTriple.vue'
 import CfStatusChip from '@/components/CfStatusChip.vue'
 import CfTabBar from '@/components/CfTabBar.vue'
+import CfTopBlur from '@/components/CfTopBlur.vue'
 import SectionCard from '@/components/SectionCard.vue'
 import StatePanel from '@/components/StatePanel.vue'
 import { useAuthStore } from '@/stores/auth'
@@ -63,6 +64,32 @@ const bootstrapped = ref(false)
 const selectedBarIndex = ref(-1)
 const rangeInitialized = ref(false)
 const daySheetDate = ref<DateKey | null>(null)
+const focusTarget = ref<'records' | 'day' | null>(null)
+const focusDate = ref<DateKey | null>(null)
+const hasScrollTail = ref(false)
+
+onLoad((options) => {
+  const date = typeof options?.date === 'string' ? options.date : ''
+  const dateValid = /^\d{4}-\d{2}-\d{2}$/.test(date)
+  const month =
+    (dateValid ? date.slice(0, 7) : '') ||
+    (typeof options?.month === 'string' ? options.month : '')
+  if (/^\d{4}-\d{2}$/.test(month)) {
+    report.selectedMonth = month as MonthKey
+  }
+  if (dateValid) {
+    focusDate.value = date as DateKey
+  }
+  if (options?.focus === 'day' && focusDate.value !== null) {
+    mode.value = 'month'
+    focusTarget.value = 'day'
+    hasScrollTail.value = true
+  } else if (options?.focus === 'records') {
+    mode.value = 'month'
+    focusTarget.value = 'records'
+    hasScrollTail.value = true
+  }
+})
 
 onShow(async () => {
   if (!auth.isLoggedIn) {
@@ -81,7 +108,54 @@ onShow(async () => {
     }
   }
   bootstrapped.value = true
+  void scrollToFocus()
 })
+
+async function scrollToFocus(): Promise<void> {
+  const target = focusTarget.value
+  if (!target) return
+  focusTarget.value = null
+  await nextTick()
+
+  const selector =
+    target === 'day' && focusDate.value
+      ? `#report-day-${focusDate.value}`
+      : '#report-records'
+  setTimeout(() => {
+    scrollToSelector(selector, target === 'day', target === 'day' ? '#report-records' : undefined)
+  }, 100)
+}
+
+function scrollToSelector(
+  selector: string,
+  centerElement: boolean,
+  fallbackSelector?: string,
+): void {
+  const query = uni.createSelectorQuery()
+  query.select(selector).boundingClientRect()
+  query.selectViewport().scrollOffset(() => {})
+  query.exec((result) => {
+    const rect = result?.[0] as { top?: number; height?: number } | null
+    const viewport = result?.[1] as { scrollTop?: number } | null
+    if (rect?.top === undefined || viewport?.scrollTop === undefined) {
+      if (fallbackSelector) scrollToSelector(fallbackSelector, false)
+      return
+    }
+
+    const windowHeight = uni.getWindowInfo().windowHeight
+    const offsetFromTop = centerElement
+      ? (windowHeight - (rect.height ?? 0)) / 2
+      : windowHeight / 2 - 40
+    const targetTop = Math.max(0, viewport.scrollTop + rect.top - offsetFromTop)
+    uni.pageScrollTo({
+      scrollTop: targetTop,
+      duration: 300,
+      fail: () => {
+        // 页面结构尚未完成时由用户继续操作，不影响报告内容。
+      },
+    })
+  })
+}
 
 const monthStats = computed(() => report.monthStats)
 const yearStats = computed(() => report.yearStats)
@@ -374,6 +448,7 @@ function onBarSelect(index: number): void {
 
 <template>
   <view class="cf-page cf-report" @tap="selectedBarIndex = -1">
+    <CfTopBlur />
     <view class="cf-report__content">
       <!-- 标题行 -->
       <view
@@ -564,7 +639,11 @@ function onBarSelect(index: number): void {
         </SectionCard>
 
         <!-- 骑行记录 -->
-        <SectionCard :title="records.title" :subtitle="records.subtitle" compact-radius>
+        <SectionCard
+          id="report-records"
+          :title="records.title"
+          :subtitle="records.subtitle"
+          compact-radius>
           <view v-if="records.rows.length === 0" class="empty">
             <text class="empty__text">
               {{
@@ -580,6 +659,7 @@ function onBarSelect(index: number): void {
             <view
               v-for="(row, index) in records.rows"
               :key="row.label"
+              :id="row.date ? `report-day-${row.date}` : undefined"
               class="rows__item"
               :class="{ 'rows__item--tappable': !!row.month || !!row.date }"
               @tap="onRecordTap(row)"
@@ -617,6 +697,7 @@ function onBarSelect(index: number): void {
         <text v-else-if="mode === 'month' && monthStats?.inProgress" class="footnote">
           当前月份数据统计至今日。
         </text>
+        <view v-if="hasScrollTail" class="scroll-tail" />
       </template>
     </view>
 
@@ -641,6 +722,11 @@ function onBarSelect(index: number): void {
   flex-direction: column;
   gap: var(--cf-space-gap);
   padding: 0 var(--cf-space-page) 200rpx;
+}
+
+.scroll-tail {
+  height: 50vh;
+  flex-shrink: 0;
 }
 
 .page-head {

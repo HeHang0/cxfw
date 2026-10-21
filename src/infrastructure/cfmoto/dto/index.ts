@@ -78,6 +78,14 @@ export interface VehicleOverviewDto {
   readonly [key: string]: unknown
 }
 
+/** `/app/user/vehicle/breakdown/rescue/setting` 的单车摔车提醒开关。 */
+export interface CrashRescueSettingDto {
+  readonly vehicleCrashRescueServiceSwitch?: unknown
+  readonly vehicleName?: unknown
+  readonly vehiclePicUrl?: unknown
+  readonly vin?: unknown
+}
+
 /** `vehicleFunctionList[]`：功能名 + 是否支持。 */
 export interface VehicleFunctionDto {
   readonly id?: unknown

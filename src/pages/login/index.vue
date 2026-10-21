@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
-import CfIcon from '@/components/CfIcon.vue';
+import CfTopBlur from '@/components/CfTopBlur.vue';
 import StatePanel from '@/components/StatePanel.vue';
 import { useAuthStore } from '@/stores/auth';
 import { useVehicleStore } from '@/stores/vehicle';
@@ -13,7 +13,7 @@ import { readInputValue } from '@/utils/uni-events';
 /**
  * 登录页（设计稿 Frame「05 登录」，节点 2:775）。
  *
- * 版式：透明 Logo + 标题 → 插画卡 → 欢迎语 → 表单卡（登录方式切换 / 手机号 / 验证码 / 登录按钮 / 协议）
+ * 版式：透明 Logo + 标题 → 插画卡 → 欢迎语 → 表单卡（登录方式切换 / 手机号 / 验证码 / 登录按钮）
  * → 底部帮助行。短信验证码登录是 api.yaml 给出的主路径，密码登录接口未实测。
  */
 
@@ -26,7 +26,6 @@ const verifyCode = ref('');
 const password = ref('');
 const passwordVisible = ref(false);
 const usePassword = ref(false);
-const agreed = ref(true);
 const localError = ref<string | null>(null);
 
 const phoneValid = computed(() => /^1[3-9]\d{9}$/.test(phone.value.trim()));
@@ -87,10 +86,6 @@ async function onSendCode(): Promise<void> {
 
 async function onSubmit(): Promise<void> {
   localError.value = null;
-  if (!agreed.value) {
-    localError.value = '请先阅读并同意用户协议与隐私政策';
-    return;
-  }
   if (!canSubmit.value) {
     localError.value = usePassword.value
       ? '请填写手机号与密码'
@@ -107,13 +102,11 @@ async function onSubmit(): Promise<void> {
   }
 }
 
-function onToggleAgree(): void {
-  agreed.value = !agreed.value;
-}
 </script>
 
 <template>
   <view class="cf-page cf-login">
+    <CfTopBlur />
     <view class="cf-login__content">
       <!-- 品牌区 -->
       <view
@@ -258,17 +251,6 @@ function onToggleAgree(): void {
           }}</text>
         </view>
 
-        <view class="agree">
-          <view
-            class="agree__box"
-            :class="{ 'agree__box--on': agreed }"
-            @tap="onToggleAgree">
-            <CfIcon v-if="agreed" name="check-white" :size="18" />
-          </view>
-          <text class="agree__text" @tap="onToggleAgree"
-            >已阅读并同意《用户协议》与《隐私政策》</text
-          >
-        </view>
       </view>
 
       <!-- 帮助行 -->
@@ -525,36 +507,6 @@ function onToggleAgree(): void {
   font-size: 30rpx;
   font-weight: 700;
   color: #ffffff;
-}
-
-.agree {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 14rpx;
-}
-
-.agree__box {
-  width: 28rpx;
-  height: 28rpx;
-  border-radius: 8rpx;
-  box-sizing: border-box;
-  border: 2rpx solid var(--cf-text-3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.agree__box--on {
-  background-color: var(--cf-blue-deep);
-  border-color: var(--cf-blue-deep);
-}
-
-.agree__text {
-  font-size: 20rpx;
-  line-height: 1.3;
-  color: var(--cf-text-2);
 }
 
 .source-note {

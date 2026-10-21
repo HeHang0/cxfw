@@ -2,6 +2,7 @@
 import { computed, nextTick, watch } from 'vue'
 import { onLoad, onReady } from '@dcloudio/uni-app'
 import CfIcon from '@/components/CfIcon.vue'
+import CfTopBlur from '@/components/CfTopBlur.vue'
 import StatePanel from '@/components/StatePanel.vue'
 import { useSafeArea } from '@/composables/useSafeArea'
 import { useRideHistoryStore } from '@/stores/rideHistory'
@@ -73,6 +74,17 @@ const speedRange = computed(() => {
   return { min: Math.min(...speeds), max: Math.max(...speeds) }
 })
 
+const maxSpeedPoint = computed(() => {
+  let fastest: (typeof trackPoints.value)[number] | null = null
+  for (const point of trackPoints.value) {
+    if (point.speedKph === null || !Number.isFinite(point.speedKph)) continue
+    if (fastest === null || point.speedKph > (fastest.speedKph ?? -Infinity)) {
+      fastest = point
+    }
+  }
+  return fastest
+})
+
 const polylines = computed(() => {
   const points = trackPoints.value
   if (points.length < 2) return []
@@ -130,7 +142,7 @@ const mapMarkers = computed(() => {
   const start = mapPoints.value[0]
   const end = mapPoints.value[mapPoints.value.length - 1]
   if (!start || !end) return []
-  return [
+  const markers = [
     {
       id: 1,
       latitude: start.latitude,
@@ -152,6 +164,20 @@ const mapMarkers = computed(() => {
       zIndex: 9,
     },
   ]
+  const fastest = maxSpeedPoint.value
+  if (fastest !== null && fastest.speedKph !== null) {
+    markers.push({
+      id: 3,
+      latitude: fastest.latitude,
+      longitude: fastest.longitude,
+      iconPath: '/static/map/speed-pin.png',
+      width: 32,
+      height: 42,
+      anchor: { x: 0.5, y: 1 },
+      zIndex: 11,
+    })
+  }
+  return markers
 })
 
 const averageSpeed = computed(() => {
@@ -187,7 +213,7 @@ const eventCounts = computed(() => {
 const timeRangeText = computed(() => {
   const detail = ride.detail
   if (!detail) return ''
-  return `${detail.startTime?.slice(5, 16) ?? '—'} → ${detail.endTime?.slice(5, 16) ?? '—'}`
+  return `${detail.startTime?.slice(5, 16) ?? '—'} ~ ${detail.endTime?.slice(5, 16) ?? '—'}`
 })
 
 const tripDateText = computed(() => ride.detail?.startTime?.slice(0, 10) ?? '')
@@ -291,6 +317,7 @@ function compactText(value: string): string {
 
 <template>
   <view class="detail">
+    <CfTopBlur />
     <map
       v-if="mapPoints.length > 0"
       :id="MAP_ID"

@@ -5,6 +5,7 @@ import CfIcon from '@/components/CfIcon.vue'
 import CfStatTriple from '@/components/CfStatTriple.vue'
 import CfStatusChip from '@/components/CfStatusChip.vue'
 import CfTabBar from '@/components/CfTabBar.vue'
+import CfTopBlur from '@/components/CfTopBlur.vue'
 import ProgressBar from '@/components/ProgressBar.vue'
 import SectionCard from '@/components/SectionCard.vue'
 import StatePanel from '@/components/StatePanel.vue'
@@ -249,6 +250,7 @@ async function onLogout(): Promise<void> {
 
 <template>
   <view class="cf-page cf-archive">
+    <CfTopBlur />
     <view class="cf-archive__content">
       <!-- 标题行 -->
       <view

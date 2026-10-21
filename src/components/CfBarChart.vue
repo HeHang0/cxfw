@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 
 /**
  * 柱状趋势图（设计稿节点 2:125 那一组）。
@@ -35,6 +35,10 @@ const emit = defineEmits<{
 
 const MAX_HEIGHT_RPX = 156
 const MIN_HEIGHT_RPX = 10
+/** 每根柱子的最小占位，数据多时由外层横向滚动。 */
+const MIN_ITEM_WIDTH_RPX = 56
+const MAX_SCROLL_LEFT = 999999
+const scrollLeft = ref(0)
 
 const maxValue = computed(() => {
   let max = 0
@@ -55,10 +59,31 @@ const selectedPoint = computed(() => {
   return props.points[props.selectedIndex] ?? null
 })
 
+const pointsKey = computed(() =>
+  props.points.map((point) => `${point.label}:${point.value ?? 'unknown'}`).join('|'),
+)
+
+watch(
+  pointsKey,
+  async () => {
+    await nextTick()
+    // 等 rpx 转换和柱状图布局完成后再滚动，否则 scrollLeft 会被夹到 0。
+    setTimeout(() => {
+      // 每次切换月份/年份都回到最右侧，默认展示最新数据。
+      scrollLeft.value =
+        scrollLeft.value === MAX_SCROLL_LEFT ? MAX_SCROLL_LEFT - 1 : MAX_SCROLL_LEFT
+    }, 50)
+  },
+  { immediate: true },
+)
+
 const tooltipLeft = computed(() => {
   if (props.selectedIndex < 0 || props.points.length === 0) return '50%'
   const raw = ((props.selectedIndex + 0.5) / props.points.length) * 100
-  return `${Math.min(92, Math.max(8, raw))}%`
+  // 提示框不能越过可滚动画布边缘。
+  const canvasWidthRpx = Math.max(props.points.length * MIN_ITEM_WIDTH_RPX, 500)
+  const inset = Math.min(50, (120 / canvasWidthRpx) * 100)
+  return `${Math.min(100 - inset, Math.max(inset, raw))}%`
 })
 
 function heightOf(value: number | null): string {
@@ -80,41 +105,61 @@ function selectBar(index: number): void {
 
 <template>
   <view class="bars-wrap">
-    <view
-      v-if="selectedPoint"
-      class="bars__tip"
-      :style="{ left: tooltipLeft }"
-    >
-      <text class="bars__tip-text">{{ selectedPoint.tooltip ?? `${selectedPoint.label} · ${selectedPoint.value ?? '暂无数据'}` }}</text>
-    </view>
-    <view class="bars">
+    <scroll-view
+      class="bars-scroll"
+      scroll-x
+      :show-scrollbar="false"
+      :scroll-left="scrollLeft">
       <view
-        v-for="(point, index) in points"
-        :key="`${point.label}-${index}`"
-        class="bars__item"
-        @tap.stop="selectBar(index)"
-      >
-        <view class="bars__track">
-          <view
-            class="bars__bar"
-            :class="{
-              'bars__bar--active': index === active && point.value !== null,
-              'bars__bar--selected': index === selectedIndex && point.value !== null,
-              'bars__bar--unknown': point.value === null,
-            }"
-            :style="{ height: heightOf(point.value) }"
-          />
+        class="bars-canvas"
+        :style="{ minWidth: `${points.length * MIN_ITEM_WIDTH_RPX}rpx` }">
+        <view
+          v-if="selectedPoint"
+          class="bars__tip"
+          :style="{ left: tooltipLeft }"
+        >
+          <text class="bars__tip-text">{{ selectedPoint.tooltip ?? `${selectedPoint.label} · ${selectedPoint.value ?? '暂无数据'}` }}</text>
         </view>
-        <text class="bars__label" :class="{ 'bars__label--active': index === active }">
-          {{ showLabel(index) ? point.label : '' }}
-        </text>
+        <view class="bars">
+          <view
+            v-for="(point, index) in points"
+            :key="`${point.label}-${index}`"
+            class="bars__item"
+            @tap.stop="selectBar(index)"
+          >
+            <view class="bars__track">
+              <view
+                class="bars__bar"
+                :class="{
+                  'bars__bar--active': index === active && point.value !== null,
+                  'bars__bar--selected': index === selectedIndex && point.value !== null,
+                  'bars__bar--unknown': point.value === null,
+                }"
+                :style="{ height: heightOf(point.value) }"
+              />
+            </view>
+            <text class="bars__label" :class="{ 'bars__label--active': index === active }">
+              {{ showLabel(index) ? point.label : '' }}
+            </text>
+          </view>
+        </view>
       </view>
-    </view>
+    </scroll-view>
   </view>
 </template>
 
 <style>
 .bars-wrap {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.bars-scroll {
+  width: 100%;
+}
+
+.bars-canvas {
   position: relative;
   width: 100%;
   padding-top: 72rpx;
@@ -125,7 +170,7 @@ function selectBar(index: number): void {
   position: absolute;
   top: 0;
   transform: translateX(-50%);
-  max-width: 92%;
+  max-width: 240rpx;
   padding: 10rpx 18rpx;
   border-radius: 14rpx;
   background-color: var(--cf-blue-deep);

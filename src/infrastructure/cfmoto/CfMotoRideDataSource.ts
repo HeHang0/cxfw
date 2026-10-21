@@ -2,6 +2,7 @@ import type { RideDataSource, RideDataSourceCapabilities } from '@/core/contract
 import { dateKeyToEpochMs, endOfDayText, startOfDayText } from '@/core/domain/datetime'
 import type { DateKey, MonthKey, VehicleRef } from '@/core/domain/identifiers'
 import type {
+  CrashRescueSetting,
   Paged,
   RideHistoryDetail,
   RideHistoryItem,
@@ -36,6 +37,7 @@ import {
   toRideHistoryItems,
   toVehicleListInputs,
   toVehicleOptionInputs,
+  toCrashRescueSettings,
   toVehicleState,
   toVehicleTelemetry,
   toMonthlyFuelConsumption,
@@ -135,14 +137,48 @@ export class CfMotoRideDataSource implements RideDataSource {
   }
 
   async getVehicleState(ref: VehicleRef): Promise<VehicleState> {
-    const dto = await this.client.call<VehicleOverviewDto>({
-      path: CFMOTO_PATHS.vehicleStateOverview,
+    const [dto, crashRescueSettings] = await Promise.all([
+      this.client.call<VehicleOverviewDto>({
+        path: CFMOTO_PATHS.vehicleStateOverview,
+        method: 'GET',
+        query: { vin: ref.vin },
+        requiresAuth: true,
+        deviceId: ref.deviceId,
+      }),
+      this.getCrashRescueSettings().catch((error: unknown) => {
+        this.logger.warn('获取摔车提醒设置失败', {
+          message: error instanceof Error ? error.message : String(error),
+        })
+        return [] as CrashRescueSetting[]
+      }),
+    ])
+
+    const state = toVehicleState(ref, dto)
+    const crashRescue = crashRescueSettings.find(
+      (item) => item.vin.trim().toUpperCase() === ref.vin.trim().toUpperCase(),
+    )
+    if (!crashRescue || crashRescue.enabled === null) return state
+
+    return {
+      ...state,
+      messageSettings: [
+        ...state.messageSettings.filter((item) => item.type !== 'crashRescue'),
+        {
+          type: 'crashRescue',
+          enabled: crashRescue.enabled,
+          threshold: null,
+        },
+      ],
+    }
+  }
+
+  private async getCrashRescueSettings(): Promise<CrashRescueSetting[]> {
+    const dto = await this.client.call<unknown>({
+      path: CFMOTO_PATHS.vehicleCrashRescueSettings,
       method: 'GET',
-      query: { vin: ref.vin },
       requiresAuth: true,
-      deviceId: ref.deviceId,
     })
-    return toVehicleState(ref, dto)
+    return toCrashRescueSettings(dto)
   }
 
   async getVehicleTelemetry(ref: VehicleRef): Promise<VehicleTelemetry> {

@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import CfIcon from '@/components/CfIcon.vue'
+import CfTopBlur from '@/components/CfTopBlur.vue'
 import SectionCard from '@/components/SectionCard.vue'
 import StatePanel from '@/components/StatePanel.vue'
 import { useAuthStore } from '@/stores/auth'
@@ -264,6 +265,7 @@ function recordPriceText(record: { price: number | null; grade: string | null })
 
 <template>
   <view class="cf-page cf-fuel">
+    <CfTopBlur />
     <view class="cf-fuel__content">
       <view
         class="page-head"

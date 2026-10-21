@@ -4,6 +4,7 @@ import type { DateKey, MonthKey, VehicleRef } from '@/core/domain/identifiers'
 import { createIssue, type DataIssue } from '@/core/domain/issues'
 import type {
   AuthSession,
+  CrashRescueSetting,
   Paged,
   MonthlyFuelConsumption,
   RideHistoryDetail,
@@ -18,6 +19,7 @@ import type {
 } from '@/core/domain/models'
 import type {
   DayRideStatsDto,
+  CrashRescueSettingDto,
   LoginByVerifyCodeDto,
   MonthRideReportDto,
   MonthlyFuelDto,
@@ -240,6 +242,26 @@ export function toVehicleState(ref: VehicleRef, dto: VehicleOverviewDto | undefi
     settings,
     issues,
   }
+}
+
+export function toCrashRescueSettings(value: unknown): CrashRescueSetting[] {
+  return asArray(value).flatMap((item) => {
+    const record = asRecord(item) as CrashRescueSettingDto
+    const vin = toText(record.vin)
+    if (!vin) return []
+
+    return [
+      {
+        vin,
+        vehicleName: toText(record.vehicleName),
+        imageUrl: toText(record.vehiclePicUrl),
+        enabled:
+          typeof record.vehicleCrashRescueServiceSwitch === 'boolean'
+            ? record.vehicleCrashRescueServiceSwitch
+            : null,
+      },
+    ]
+  })
 }
 
 export function toVehicleTelemetry(

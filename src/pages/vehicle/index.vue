@@ -5,6 +5,7 @@ import CfBikeScene from '@/components/CfBikeScene.vue';
 import CfIcon from '@/components/CfIcon.vue';
 import CfStatusChip from '@/components/CfStatusChip.vue';
 import CfTabBar from '@/components/CfTabBar.vue';
+import CfTopBlur from '@/components/CfTopBlur.vue';
 import SectionCard from '@/components/SectionCard.vue';
 import StatePanel from '@/components/StatePanel.vue';
 import VehiclePicker from '@/components/VehiclePicker.vue';
@@ -12,8 +13,9 @@ import { useAuthStore } from '@/stores/auth';
 import { useFuelStore } from '@/stores/fuel';
 import { useVehicleStore } from '@/stores/vehicle';
 import { useSafeArea } from '@/composables/useSafeArea';
+import { shortenFenceAddress } from '@/core/domain/address';
 import { formatMonth } from '@/core/domain/datetime';
-import { vehicleMessageLabel } from '@/core/domain/vehicleMessages';
+import { vehicleMessageLabel, vehicleMessageThresholdText } from '@/core/domain/vehicleMessages';
 import { getContainer } from '@/services/container';
 import {
   formatDateOnly,
@@ -372,11 +374,7 @@ const serviceRows = computed(() => {
     value: string;
     tone: 'mint' | 'neutral';
     action?: boolean;
-  }> = (state.value?.functions ?? []).map(item => ({
-    label: item.name,
-    value: item.supported ? '已支持' : '不支持',
-    tone: item.supported ? 'mint' : 'neutral'
-  }));
+  }> = [];
   const messages = state.value?.messageSettings ?? [];
   if (messages.length > 0) {
     const enabled = messages.filter(item => item.enabled).length;
@@ -387,6 +385,13 @@ const serviceRows = computed(() => {
       action: true
     });
   }
+  rows.push(
+    ...(state.value?.functions ?? []).map(item => ({
+      label: item.name,
+      value: item.supported ? '已支持' : '不支持',
+      tone: item.supported ? ('mint' as const) : ('neutral' as const)
+    }))
+  );
   return rows;
 });
 
@@ -394,7 +399,8 @@ const displayMessages = computed(() =>
   (state.value?.messageSettings ?? []).map(item => ({
     type: item.type,
     label: vehicleMessageLabel(item.type),
-    enabled: item.enabled
+    enabled: item.enabled,
+    thresholdText: vehicleMessageThresholdText(item.type, item.threshold)
   }))
 );
 
@@ -412,7 +418,7 @@ const fencingLines = computed(() => {
   return fences
     .map(
       fence =>
-        `${fence.name ?? '未命名'}（${fence.address ?? '无地址'}，半径 ${formatKm(fence.radiusKm, 1)}）`
+        `${fence.name ?? '未命名'}（${shortenFenceAddress(fence.address) ?? '无地址'}，半径 ${formatKm(fence.radiusKm, 1)}）`
     );
 });
 
@@ -486,6 +492,7 @@ function togglePicker(): void {
 
 <template>
   <view class="cf-page cf-vehicle">
+    <CfTopBlur />
     <view class="cf-vehicle__content">
       <!-- 标题行 -->
       <view
@@ -839,7 +846,13 @@ function togglePicker(): void {
               :class="
                 item.enabled ? 'message-row__dot--on' : 'message-row__dot--off'
               " />
-            <text class="message-row__label">{{ item.label }}</text>
+            <view class="message-row__copy">
+              <text class="message-row__label">{{ item.label }}</text>
+              <text
+                v-if="item.thresholdText"
+                class="message-row__threshold"
+              >{{ item.thresholdText }}</text>
+            </view>
             <text
               class="message-row__status"
               :class="
@@ -1361,10 +1374,22 @@ function togglePicker(): void {
 }
 
 .message-row__label {
-  flex: 1;
-  min-width: 0;
   font-size: 24rpx;
   color: var(--cf-text-1);
+}
+
+.message-row__copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.message-row__threshold {
+  font-size: 20rpx;
+  line-height: 1.5;
+  color: var(--cf-text-3);
 }
 
 .message-row__status {

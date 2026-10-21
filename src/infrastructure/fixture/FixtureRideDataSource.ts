@@ -136,7 +136,8 @@ export class FixtureRideDataSource implements RideDataSource {
       messageSettings: [
         { type: '2', enabled: true, threshold: '50' },
         { type: '3', enabled: true, threshold: '1' },
-        { type: '14', enabled: false, threshold: null }
+        { type: '14', enabled: false, threshold: null },
+        { type: 'crashRescue', enabled: true, threshold: null }
       ],
       settings: {
         deviceId: ref.deviceId,

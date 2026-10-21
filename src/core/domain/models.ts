@@ -94,6 +94,14 @@ export interface VehicleState {
   readonly issues: readonly DataIssue[]
 }
 
+/** 摔车救援提醒开关，接口一次返回所有车辆。 */
+export interface CrashRescueSetting {
+  readonly vin: string
+  readonly vehicleName: string | null
+  readonly imageUrl: string | null
+  readonly enabled: boolean | null
+}
+
 /** 实时车况里的车辆位置（`geoLocation`）。 */
 export interface VehicleLocation {
   readonly latitude: number | null
